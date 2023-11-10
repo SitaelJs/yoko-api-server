@@ -1,3 +1,4 @@
+import { UserResponse } from './../user/responses/user.response';
 import { ConfigService } from '@nestjs/config';
 import {
   Body,
@@ -8,6 +9,8 @@ import {
   UnauthorizedException,
   Res,
   HttpStatus,
+  ClassSerializerInterceptor,
+  UseInterceptors,
 } from '@nestjs/common';
 import { LoginDto, RegisterDto } from './dto';
 import { AuthService } from './auth.service';
@@ -24,6 +27,7 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     const user = await this.authService.register(dto);
@@ -32,6 +36,7 @@ export class AuthController {
         `Не получилось зарегистрировать пользователя ${JSON.stringify(dto)}`,
       );
     }
+    return new UserResponse(user);
   }
 
   @Post('login')
