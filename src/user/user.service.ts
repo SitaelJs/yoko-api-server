@@ -1,6 +1,12 @@
+import { JwtPayload } from '@auth/interfaces/tokens-interface';
 import { PrismaService } from './../prisma/prisma.service';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
+import { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -18,15 +24,18 @@ export class UserService {
     });
   }
 
-  findOne(idOrEmail: string) {
-    return this.prismaService.user.findFirst({
+  async findOne(idOrEmail: string) {
+    return await this.prismaService.user.findFirst({
       where: {
         OR: [{ id: idOrEmail }, { email: idOrEmail }],
       },
     });
   }
 
-  async delete(id: string) {
+  async delete(id: string, user: JwtPayload) {
+    if (user.id !== id && !user.roles.includes(Role.ADMIN)) {
+      throw new ForbiddenException();
+    }
     return await this.prismaService.user
       .delete({
         where: { id },

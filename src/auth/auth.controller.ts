@@ -45,13 +45,33 @@ export class AuthController {
     @Res() res: Response,
     @UserAgent() agent: string,
   ) {
-    const tokens = await this.authService.login(dto, agent);
+    const tokens = await this.authService
+      .login(dto, agent)
+      .catch((error) => console.log(error));
     if (!tokens) {
       throw new BadRequestException(
         `Не получается войти с данными ${JSON.stringify(dto)}`,
       );
     }
     this.setRefreshTokenToCookie(tokens, res);
+  }
+
+  @Get('logout')
+  async logout(
+    @Cookie(REFRESH_TOKEN) refreshToken: string,
+    @Res() res: Response, 
+  ) {
+    if (!refreshToken) {
+      res.sendStatus(HttpStatus.OK);
+      return;
+    }
+    await this.authService.deleteRefreshToken(refreshToken);
+    res.cookie(REFRESH_TOKEN, '', {
+      httpOnly: true,
+      secure: true,
+      expires: new Date(),
+    });
+    res.sendStatus(HttpStatus.OK);
   }
 
   @Get('refresh')

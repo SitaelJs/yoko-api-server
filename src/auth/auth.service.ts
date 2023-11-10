@@ -22,12 +22,19 @@ export class AuthService {
     private readonly prismaService: PrismaService,
   ) {}
 
+  private readonly logger = new Logger(AuthService.name);
+
   async refreshTokens(refreshToken: string, agent: string): Promise<Tokens> {
-    const token = await this.prismaService.token.findUnique({
-      where: { token: refreshToken },
-    });
+    const token = await this.prismaService.token
+      .findUnique({
+        where: { token: refreshToken },
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        return null;
+      });
     const user: User = await this.userService
-      .findOne(token.userId)
+      .findOne(token?.userId)
       .catch((err) => {
         this.logger.error(err);
         return null;
@@ -41,8 +48,6 @@ export class AuthService {
     }
     return this.generateTokens(user, agent);
   }
-
-  private readonly logger = new Logger(AuthService.name);
 
   async register(dto: RegisterDto) {
     const user: User = await this.userService
@@ -104,5 +109,9 @@ export class AuthService {
         userAgent: agent,
       },
     });
+  }
+
+  deleteRefreshToken(token: string) {
+    return this.prismaService.token.delete({ where: { token } });
   }
 }
