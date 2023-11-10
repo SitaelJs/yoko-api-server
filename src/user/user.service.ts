@@ -26,19 +26,24 @@ export class UserService {
     });
   }
 
-  delete(id: string) {
-    return this.prismaService.user.delete({ where: { id } }).catch((error) => {
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: error,
-        },
-        HttpStatus.NOT_FOUND,
-        {
-          cause: error,
-        },
-      );
-    });
+  async delete(id: string) {
+    return await this.prismaService.user
+      .delete({
+        where: { id },
+        select: { id: true },
+      })
+      .catch((error) => {
+        throw new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: error,
+          },
+          HttpStatus.NOT_FOUND,
+          {
+            cause: error,
+          },
+        );
+      });
   }
 
   private hashPassword(password: string) {

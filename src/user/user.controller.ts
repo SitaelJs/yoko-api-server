@@ -6,26 +6,27 @@ import {
   Get,
   Delete,
   ParseUUIDPipe,
+  UseInterceptors,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from '@prisma/client';
+import { UserResponse } from './responses';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  createUser(@Body() dto: Partial<User>) {
-    return this.userService.save(dto);
-  }
-
+  @UseInterceptors(ClassSerializerInterceptor)
   @Get(':idOrEmail')
-  findUser(@Param('idOrEmail') idOrEmail: string) {
-    return this.userService.findOne(idOrEmail);
+  async findUser(@Param('idOrEmail') idOrEmail: string) {
+    const user = await this.userService.findOne(idOrEmail);
+    return new UserResponse(user);
   }
 
+  @UseInterceptors(ClassSerializerInterceptor)
   @Delete(':id')
-  deleteUser(@Param('id', ParseUUIDPipe) id: string) {
+  async deleteUser(@Param('id', ParseUUIDPipe) id: string) {
     return this.userService.delete(id);
   }
 }
