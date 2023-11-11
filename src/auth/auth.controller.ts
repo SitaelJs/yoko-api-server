@@ -11,12 +11,21 @@ import {
   HttpStatus,
   ClassSerializerInterceptor,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { LoginDto, RegisterDto } from './dto';
 import { AuthService } from './auth.service';
-import { Tokens } from './interfaces/tokens-interface';
+import { JwtPayload, Tokens } from './interfaces/tokens-interface';
 import { Response } from 'express';
-import { Cookie, Public, UserAgent } from '@common/decorators';
+import {
+  Cookie,
+  CurrentUser,
+  Public,
+  Roles,
+  UserAgent,
+} from '@common/decorators';
+import { RolesGuard } from './guards/role.guard';
+import { Role } from '@prisma/client';
 
 const REFRESH_TOKEN = 'refreshToken';
 @Public()
@@ -59,7 +68,7 @@ export class AuthController {
   @Get('logout')
   async logout(
     @Cookie(REFRESH_TOKEN) refreshToken: string,
-    @Res() res: Response, 
+    @Res() res: Response,
   ) {
     if (!refreshToken) {
       res.sendStatus(HttpStatus.OK);
