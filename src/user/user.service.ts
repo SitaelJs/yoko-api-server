@@ -9,7 +9,7 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { Role, User } from '@prisma/client';
+import { Provider, Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { convertToSecondsUtil } from '@common/utils';
@@ -23,14 +23,32 @@ export class UserService {
   ) {}
 
   async save(user: Partial<User>) {
-    const hashedPass = this.hashPassword(user.password);
-    return this.prismaService.user.create({
-      data: {
+    const hashedPass = user?.password ? this.hashPassword(user.password) : null;
+    // const savedUser = await this.prismaService.user.create({
+    //   data: {
+    //     email: user.email,
+    //     password: hashedPass,
+    //     roles: 'USER',
+    //     provider: user.provider,
+    //   },
+    // });
+    const savedUser = await this.prismaService.user.upsert({
+      where: { email: user.email },
+      update: {
+        password: hashedPass,
+        provider: user?.provider,
+        roles: user.roles,
+      },
+      create: {
         email: user.email,
         password: hashedPass,
         roles: 'USER',
+        provider: user.provider,
       },
     });
+    await this.cacheManager.set(savedUser.id, savedUser);
+    await this.cacheManager.set(savedUser.email, savedUser);
+    return savedUser;
   }
 
   async findOne(idOrEmail: string, isReset = false) {
