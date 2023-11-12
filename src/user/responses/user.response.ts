@@ -12,6 +12,9 @@ export class UserResponse implements User {
   updatedAt: Date;
   roles: $Enums.Role;
 
+  @Exclude()
+  provider: $Enums.Provider;
+
   constructor(user: User) {
     Object.assign(this, user);
   }
